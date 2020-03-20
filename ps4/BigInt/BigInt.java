@@ -85,6 +85,9 @@ public class BigInt  {
         this.digits = new int[BigInt.SIZE];
         int indx = BigInt.SIZE - 1;
         int numSD = 0;
+        if (n == 0) {
+            this.numSigDigits = 1;
+        }
         while (n > 0) {
             this.digits[indx] = n % 10;
             n = n / 10;
@@ -92,9 +95,6 @@ public class BigInt  {
             numSD++;
         }
         this.numSigDigits = numSD;
-        if (n == 0) {
-            this.numSigDigits = 1;
-        }
     }
 
     /*
@@ -150,50 +150,6 @@ public class BigInt  {
     }
 
     /*
-     * Private helper method for mul()
-     * Multiplies this BigInt object by other BigInt object
-     * NOTE: other BigInt is ONLY one numSigDigit
-     * private helper -> don't need to throw exception
-     */
-    private BigInt mulHelp(BigInt other) {
-        if (other.digits[BigInt.SIZE - 1] == 0) {
-            return new BigInt();
-        }
-        int[] copy = new int[BigInt.SIZE];
-        int addValue = 0;
-        int carryValue = 0;
-        for (int i = BigInt.SIZE - 1; i >= BigInt.SIZE - this.getNumSigDigits(); i--) {
-            addValue = this.digits[i] * other.digits[BigInt.SIZE - 1] + carryValue;
-            if (addValue >= 10) {
-                carryValue = addValue / 10;
-                addValue = addValue % 10;
-            }
-            if (i == 0 && carryValue > 0) {
-                throw new ArithmeticException();
-            }
-            copy[i] += addValue;
-        }
-        return new BigInt(copy);
-    }
-
-    /*
-     * Shifts BigInt array over to the left by n
-     */
-    private BigInt shifter(int n) {
-        int[] copy = new int[BigInt.SIZE];
-        for (int a = 0; a < BigInt.SIZE; a++) {
-            copy[a] = this.digits[a];
-        }
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < BigInt.SIZE - 1; j++) {
-                copy[j] = copy[j+1];
-            }
-            copy[BigInt.SIZE - 1] = 0;
-        }
-        return new BigInt(copy);
-    }
-
-    /*
      * Multiply two BigInt objects together.
      * this.mul(other);
      */
@@ -201,12 +157,29 @@ public class BigInt  {
         if (other == null) {
             throw new IllegalArgumentException();
         }
+        int addVal = 0;
+        int carryVal = 0;
         BigInt total = new BigInt();
-        int j = 0;
-        for (int i = BigInt.SIZE - 1; i >= BigInt.SIZE - other.getNumSigDigits(); i--) {
-            BigInt stuf = new BigInt(this.digits[i]);
-            total.add((this.mulHelp(stuf)).shifter(j));
-            j++;
+        BigInt tempTotal = new BigInt();
+        for (int i = BigInt.SIZE - 1; i > BigInt.SIZE - this.getNumSigDigits() - 1; i--) {
+            int[] arrTotal = new int[BigInt.SIZE];
+            for (int j = BigInt.SIZE - 1; j > BigInt.SIZE - other.getNumSigDigits() - 2; j--) {
+                addVal = this.digits[i] * other.digits[j] + carryVal;
+                carryVal = addVal / 10;
+                addVal = addVal % 10;
+                arrTotal[i + j - 19] = addVal;
+                if ((i + j - 20) < 0) {
+                    if (carryVal > 0) {
+                        throw new ArithmeticException();
+                    } else {
+                        break;
+                    }
+                } else {
+                    arrTotal[i + j - 20] = carryVal;
+                }
+            }
+            tempTotal = new BigInt(arrTotal);
+            total = total.add(tempTotal);
         }
         return total;        
     }
@@ -335,13 +308,13 @@ public class BigInt  {
         BigInt product = b1.mul(b2);
         System.out.println(product);
         System.out.println();
-        /*
+
         System.out.println("Test 18: result should be\n99999999999999999999");
         b1 = new BigInt(a20);   // 20 nines -- see above
         b2 = new BigInt(1);
         System.out.println(b1.mul(b2));
         System.out.println();
-        */
+
         System.out.println("Test 19: should throw an ArithmeticException");
         try {
             b1 = new BigInt(a20);
@@ -353,13 +326,5 @@ public class BigInt  {
             System.out.println("Test failed: threw wrong type of exception.");
         }
         System.out.println();
-
-        BigInt stugg = new BigInt(123);
-        System.out.println(stugg.shifter(2));
-        System.out.println();
-
-        BigInt asd = new BigInt(123);
-        BigInt qwe = new BigInt(2);
-        System.out.println(asd.mulHelp(qwe));
     }
 }
