@@ -32,7 +32,6 @@ public class intersect extends LLList {
         LLList inters = new LLList();
     
         ListIterator iter1 = list1.iterator();
-
         if (list1 == null || list2 == null) {
             throw new IllegalArgumentException();
         }
